@@ -52,10 +52,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         final Button bluetooth_button = (Button) findViewById(R.id.bluetooth_button);
         bluetooth_button.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                // send bluetooth stuff
-                sendData("a");
-
-                // toast to indicate stuff happened
+                // toast to indicate button pressed
                 Toast toast = Toast.makeText(getApplicationContext(), "It works!", Toast.LENGTH_SHORT);
                 toast.show();
             }
@@ -202,8 +199,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ((android.widget.TextView) findViewById(R.id.x_reading)).setText(Float.toString(x));
             ((android.widget.TextView) findViewById(R.id.y_reading)).setText(Float.toString(y));
             ((android.widget.TextView) findViewById(R.id.z_reading)).setText(Float.toString(z));
-        }
 
+            if (z < 0) {
+                // send "a" for forward
+                sendData("a");
+            }
+            else {
+                // send "b" for backward
+                sendData("b");
+            }
+        }
     }
 
     @Override
