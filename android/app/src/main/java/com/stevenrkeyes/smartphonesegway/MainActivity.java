@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     // handles for the IMU
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
+    private Sensor senGyroscope;
 
     // for storing IMU data
     private long lastUpdate = 0;
@@ -46,7 +47,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Initialize things related to the IMU
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
         senSensorManager.registerListener(this, senAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        senSensorManager.registerListener(this, senGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
 
         // Set the onclick function for the button
         final Button bluetooth_button = (Button) findViewById(R.id.bluetooth_button);
@@ -200,7 +203,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             ((android.widget.TextView) findViewById(R.id.y_reading)).setText(Float.toString(y));
             ((android.widget.TextView) findViewById(R.id.z_reading)).setText(Float.toString(z));
 
-            if (z < 0) {
+            /*if (z < 0) {
+                // send "a" for forward
+                sendData("a");
+            }
+            else {
+                // send "b" for backward
+                sendData("b");
+            }*/
+            // todo: combine z from accelerometer and x from gyro to get a PD conroller
+        }
+        if (mySensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            float x = e.values[0];
+
+            if (x > 0) {
                 // send "a" for forward
                 sendData("a");
             }
