@@ -20,12 +20,13 @@ import android.widget.Toast;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.UUID;
+import java.lang.Math;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     // handles for the IMU
     private SensorManager senSensorManager;
-    private Sensor senAccelerometer;
+    private Sensor senGravity;
     private Sensor senGyroscope;
 
     // for storing IMU data
@@ -40,15 +41,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private static final UUID my_uuid = UUID.fromString("0000000-0000-1000-8000-00805f9b34fb");
     private static String address = "20:15:04:15:80:55";
 
+    static double thetadot;
+    static double theta;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         // Initialize things related to the IMU
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+        senGravity = senSensorManager.getDefaultSensor(Sensor.TYPE_GRAVITY);
         senGyroscope = senSensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        senSensorManager.registerListener(this, senAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+        senSensorManager.registerListener(this, senGravity, SensorManager.SENSOR_DELAY_NORMAL);
         senSensorManager.registerListener(this, senGyroscope, SensorManager.SENSOR_DELAY_NORMAL);
 
         // Set the onclick function for the button
@@ -195,13 +199,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void onSensorChanged(SensorEvent e) {
         // use the sensor event to check what kind of sensor it is
         Sensor mySensor = e.sensor;
-        if (mySensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+        if (mySensor.getType() == Sensor.TYPE_GRAVITY) {
             float x = e.values[0];
             float y = e.values[1];
             float z = e.values[2];
-            ((android.widget.TextView) findViewById(R.id.x_reading)).setText(Float.toString(x));
-            ((android.widget.TextView) findViewById(R.id.y_reading)).setText(Float.toString(y));
-            ((android.widget.TextView) findViewById(R.id.z_reading)).setText(Float.toString(z));
+            //((android.widget.TextView) findViewById(R.id.x_reading)).setText(Float.toString(x));
+            //((android.widget.TextView) findViewById(R.id.y_reading)).setText(Float.toString(y));
+            //((android.widget.TextView) findViewById(R.id.z_reading)).setText(Float.toString(z));
+
+            // in radians
+            theta = Math.atan2((double)z, (double)y) + Math.PI;
 
             /*if (z < 0) {
                 // send "a" for forward
@@ -214,17 +221,20 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             // todo: combine z from accelerometer and x from gyro to get a PD conroller
         }
         if (mySensor.getType() == Sensor.TYPE_GYROSCOPE) {
+            // in rad/s
             float x = e.values[0];
-
-            if (x > 0) {
-                // send "a" for forward
-                sendData("a");
-            }
-            else {
-                // send "b" for backward
-                sendData("b");
-            }
+            thetadot = -x;
         }
+        ((android.widget.TextView) findViewById(R.id.x_reading)).setText(Double.toString(thetadot));
+        ((android.widget.TextView) findViewById(R.id.y_reading)).setText(Double.toString(theta));
+
+        // controller
+        double error_theta = 3.3 - theta;
+        double error_thetadot = 0 - thetadot;
+        double command_value = 2*error_theta + -7.5*error_thetadot;
+        String packet = "a" + String.format("%.2g", command_value) + "z";
+        ((android.widget.TextView) findViewById(R.id.z_reading)).setText(packet);
+        sendData(packet);
     }
 
     @Override
